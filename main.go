@@ -50,6 +50,10 @@ func handleRequest() {
 
 	myRouter.HandleFunc("/", homePage)
 	myRouter.HandleFunc("/api/product", createProduct).Methods("POST")
+	myRouter.HandleFunc("/api/product", getProducts).Methods("GET")
+	myRouter.HandleFunc("/api/product/{id}", getProduct).Methods("GET")
+	myRouter.HandleFunc("/api/product/{id}", updateProduct).Methods("PUT")
+	myRouter.HandleFunc("/api/product/{id}", deleteProduct).Methods("DELETE")
 
 	log.Fatal(http.ListenAndServe(":9999", myRouter))
 }
@@ -57,6 +61,7 @@ func handleRequest() {
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome!")
 }
+
 func createProduct(w http.ResponseWriter, r *http.Request) {
 	// fmt.Fprintf(w, "Create Product")
 	payLoads, _ := ioutil.ReadAll(r.Body)
@@ -67,6 +72,90 @@ func createProduct(w http.ResponseWriter, r *http.Request) {
 	db.Create(&product)
 
 	res := Result{Code: 200, Data: product, Message: "Success create product"}
+	result, err := json.Marshal(res)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
+func getProducts(w http.ResponseWriter, r *http.Request) {
+	products := []Product{}
+
+	db.Find(&products)
+
+	res := Result{Code: 200, Data: products, Message: "Success get products"}
+	result, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+
+}
+
+func getProduct(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	productID := vars["id"]
+
+	var product Product
+	db.First(&product, productID)
+
+	res := Result{Code: 200, Data: product, Message: "Success get products"}
+	result, err := json.Marshal(res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+
+}
+
+func updateProduct(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	productID := vars["id"]
+
+	payLoads, _ := ioutil.ReadAll(r.Body)
+
+	var productUpdate Product
+	json.Unmarshal(payLoads, &productUpdate)
+
+	var product Product
+
+	db.First(&product, productID)
+	db.Model(&product).Updates(productUpdate)
+
+	res := Result{Code: 200, Data: product, Message: "Success update product"}
+	result, err := json.Marshal(res)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(result)
+}
+
+func deleteProduct(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	productID := vars["id"]
+
+	var product Product
+	db.First(&product, productID)
+	db.Delete(&product)
+
+	res := Result{Code: 200, Message: "Success delete product"}
 	result, err := json.Marshal(res)
 
 	if err != nil {
