@@ -47,11 +47,16 @@ func handleRequest() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 
 	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/api/product", createProduct).Methods("POST")
+
 	log.Fatal(http.ListenAndServe(":9999", myRouter))
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Welcome!")
+}
+func createProduct(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Create Product")
 }
 
 // https://levelup.gitconnected.com/build-a-rest-api-using-go-mysql-gorm-and-mux-a02e9a2865ee
