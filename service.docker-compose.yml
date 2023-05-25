@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+    ports:
+      - "127.0.0.1:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+
+  golang-app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    restart: always
+    environment:
+      CRON_SCHEDULE: '*/10 * * * *'
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: '256m'
+        reservations:
+          cpus: '0.1'
+          memory: '64m'
+    command: go run main.go
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
