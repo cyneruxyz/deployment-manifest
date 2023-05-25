@@ -6,7 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
+    "github.com/joho/godotenv"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -14,7 +16,6 @@ import (
 )
 
 var db *gorm.DB
-var err error
 
 // Product is a representation of a product
 type Product struct {
@@ -32,7 +33,12 @@ type Result struct {
 }
 
 func main() {
-	db, err = gorm.Open("mysql", "root:@/restapicrud_go?charset=utf8&parseTime=True")
+	err := godotenv.Load()
+	if err != nil {
+	  log.Fatal("Error loading .env file")
+	}
+
+	db, err = gorm.Open("mysql", fmt.Sprintf("%s://%s:%s@127.0.0.1:3306/%s", "mysql", os.Getenv("MYSQL_USER"), os.Getenv("MYSQL_PASSWORD"), os.Getenv("DB_DATABASE")))
 	if err != nil {
 		log.Println("Connection failed", err)
 	} else {
